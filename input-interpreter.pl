@@ -24,34 +24,79 @@ foreach my $cell (@{$data->{cell}}){
 	push(@cells,\%current_cell);
 }
 
-my ($best_delta,$best_x,$best_y) = (-99999,0,0);
-#Generate change value.
-#Somewhat verbose in order to prevent the array of pointers to hashes with pointers 
-#to arrays of pointers to hashes from being a total goat screw.
-foreach my $profile_ptr (@profiles){
-	my %profile = %{$profile_ptr};
-	my @profile_cells = @{$profile{'cells'}};
-	my $delta_sum=0;
-	foreach my $profile_cell (@profile_cells){
-		foreach my $cell_ptr (@cells){
-			my %cell = %{$cell_ptr};
-			if(${$profile_cell}{'address'} eq $cell{'address'}){
-				#This algorithm is kind of dumb but should work fine until I whip up something sexier.
-				${$profile_cell}{'delta'} = abs($cell{'signal'}-${$profile_cell}{'signal'}) + 
+print "Best delta value: $best_delta\nClosest x: $best_x\nClosest y: $best_y\n";
+
+sub get_midpoint(@profiles)
+{
+	my $x_sum, $y_sum, $weight_sum = 0;
+	foreach my $profile_ptr (@profiles){
+		my %profile = %{$profile_ptr};
+		
+		$x_sum += $profile{'x'} * $profile{'weight'};
+		$y_sum += $profile{'y'} * $profile{'weight'};
+		$weight_sum += $profile{'weight'};
+	}
+
+	my @x_y;
+
+	push(@x_y , $x_sum / $weight_sum);
+	push(@x_y , $y_sum / $weight_sum);
+
+}
+
+#Defines the weigts as the sum of the delta's
+#between the current posistions signal and noise
+#and the cells signal and noise
+sub sum_delta_weight(@profiles , @cells)
+{
+	#Since a lower delta is better, we have to subtract from max_weight
+	#to get a correctly weighted set
+	my $max_delta_sum = 0;
+
+	
+	#Generate change value.
+	#Somewhat verbose in order to prevent the array of pointers to hashes with pointers 
+	#to arrays of pointers to hashes from being a total goat screw.
+	foreach my $profile_ptr (@profiles){
+		my %profile = %{$profile_ptr};
+		my @profile_cells = @{$profile{'cells'}};
+		my $delta_sum=0;
+		foreach my $profile_cell (@profile_cells){
+			foreach my $cell_ptr (@cells){
+				my %cell = %{$cell_ptr};
+				if(${$profile_cell}{'address'} eq $cell{'address'}){
+										
+					${$profile_cell}{'delta'} = abs($cell{'signal'}-${$profile_cell}{'signal'}) + 
 					abs($cell{'noise'}-${$profile_cell}{'noise'})-90;
-				$delta_sum-=${$profile_cell}{'delta'};
-#				print "updated inbetween dsum to:$delta_sum\n";
+					$delta_sum += ${$profile_cell}{'delta'};
+				}
 			}
 		}
+		
+		$profile{'weight'} = $delta_sum;
+
+		if($delta_sum > $max_delta_sum)
+		{
+			$max_delta_sum = $delta_sum;
+		}
 	}
-	my ($x,$y) = ($profile{'x'},$profile{'y'});
-	print "Delta sum=$delta_sum \@ $x,$y\n";
-	$profile{'delta_sum'}=$delta_sum;
-	if($profile{'delta_sum'}>$best_delta && $profile{'delta_sum'}!=0){
-		$best_x = $profile{'x'};
-		$best_y = $profile{'y'};
-		$best_delta = $profile{'delta_sum'};
+
+	#Now we adjust the delta's based off the max_delta_sum 
+	foreach my $profile_ptr (@profiles){
+		my %profile = %{$profile_ptr};
+
+		#Add one so that the max_delta_sum profile is not excluded from the 
+		#midpoint calculation
+		$profile{'weight'} = $max_delta_sum - $profile{'weight'} + 1;
 	}
 }
 
-print "Best delta value: $best_delta\nClosest x: $best_x\nClosest y: $best_y\n";
+#Defines the weights as the sum of the times the
+#current posistions delta with the cell is minimal
+sub sum_min_delta_weight(@profiles, @cells)
+{
+
+}
+
+#Still need to figure out how to implement this
+#sub trim_outliers(@profiles)
