@@ -33,7 +33,7 @@ sub get_midpoint
 {
 	my @profiles = @_;
 
-	my $x_sum, $y_sum, $weight_sum = 0;
+	my ($x_sum, $y_sum, $weight_sum) = (0,0,0);
 	foreach my $profile_ptr (@profiles){
 		my %profile = %{$profile_ptr};
 		
