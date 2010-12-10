@@ -24,7 +24,7 @@ foreach my $cell (@{$data->{cell}}){
 	push(@cells,\%current_cell);
 }
 
-sum_delta_weight(@profiles);
+sum_delta_weight(@profiles , @cells);
 print get_midpoint(@profiles);
 
 #print "Best delta value: $best_delta\nClosest x: $best_x\nClosest y: $best_y\n";
