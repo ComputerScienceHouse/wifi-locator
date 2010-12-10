@@ -24,10 +24,15 @@ foreach my $cell (@{$data->{cell}}){
 	push(@cells,\%current_cell);
 }
 
-print "Best delta value: $best_delta\nClosest x: $best_x\nClosest y: $best_y\n";
+sum_delta_weight(@profiles);
+print get_midpoint(@profiles);
 
-sub get_midpoint(@profiles)
+#print "Best delta value: $best_delta\nClosest x: $best_x\nClosest y: $best_y\n";
+
+sub get_midpoint
 {
+	my @profiles = @_;
+
 	my $x_sum, $y_sum, $weight_sum = 0;
 	foreach my $profile_ptr (@profiles){
 		my %profile = %{$profile_ptr};
@@ -41,14 +46,18 @@ sub get_midpoint(@profiles)
 
 	push(@x_y , $x_sum / $weight_sum);
 	push(@x_y , $y_sum / $weight_sum);
-
+	
+	return @x_y;
 }
 
 #Defines the weigts as the sum of the delta's
 #between the current posistions signal and noise
 #and the cells signal and noise
-sub sum_delta_weight(@profiles , @cells)
+sub sum_delta_weight
 {
+	my @profiles = $_[0];
+	my @cells = $_[1];
+
 	#Since a lower delta is better, we have to subtract from max_weight
 	#to get a correctly weighted set
 	my $max_delta_sum = 0;
@@ -64,10 +73,14 @@ sub sum_delta_weight(@profiles , @cells)
 		foreach my $profile_cell (@profile_cells){
 			foreach my $cell_ptr (@cells){
 				my %cell = %{$cell_ptr};
+				
+				my $num_elements = 0;
+				
 				if(${$profile_cell}{'address'} eq $cell{'address'}){
 										
-					${$profile_cell}{'delta'} = abs($cell{'signal'}-${$profile_cell}{'signal'}) + 
-					abs($cell{'noise'}-${$profile_cell}{'noise'})-90;
+					${$profile_cell}{'delta'} = abs($cell{'signal'} - ${$profile_cell}{'signal'}) + 
+												abs($cell{'noise'} - ${$profile_cell}{'noise'});
+
 					$delta_sum += ${$profile_cell}{'delta'};
 				}
 			}
@@ -93,10 +106,13 @@ sub sum_delta_weight(@profiles , @cells)
 
 #Defines the weights as the sum of the times the
 #current posistions delta with the cell is minimal
-sub sum_min_delta_weight(@profiles, @cells)
-{
+#sub sum_min_delta_weight(@profiles, @cells)
+#{
 
-}
+#}
 
 #Still need to figure out how to implement this
 #sub trim_outliers(@profiles)
+#{
+	#foreach my $profile_ptr 
+#}
