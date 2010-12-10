@@ -58,6 +58,9 @@ sub sum_delta_weight
 	my @profiles = $_[0];
 	my @cells = $_[1];
 
+	print @profiles;
+	print @cells;
+
 	#Since a lower delta is better, we have to subtract from max_weight
 	#to get a correctly weighted set
 	my $max_delta_sum = 0;
