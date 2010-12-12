@@ -24,22 +24,21 @@ foreach my $cell (@{$data->{cell}}){
 	push(@cells,\%current_cell);
 }
 
-sum_delta_weight(\@profiles , \@cells);
-print get_midpoint(@profiles);
+@deltas = sum_delta_weight(\@profiles , \@cells);
+print get_midpoint(@deltas);
 
 #print "Best delta value: $best_delta\nClosest x: $best_x\nClosest y: $best_y\n";
 
 sub get_midpoint
 {
-	my @profiles = @_;
+	my @deltas = @_;
 
 	my ($x_sum, $y_sum, $weight_sum) = (0,0,0);
-	foreach my $profile_ptr (@profiles){
-		my %profile = %{$profile_ptr};
+	foreach my $entry (@deltas){
 		
-		$x_sum += $profile{'x'} * $profile{'weight'};
-		$y_sum += $profile{'y'} * $profile{'weight'};
-		$weight_sum += $profile{'weight'};
+		$x_sum += $entry{'x'} * $entry{'weight'};
+		$y_sum += $entry{'y'} * $entry{'weight'};
+		$weight_sum += $entry{'weight'};
 	}
 	
 	my @x_y;
@@ -55,16 +54,17 @@ sub get_midpoint
 #and the cells signal and noise
 sub sum_delta_weight
 {
-	my @profiles = @{shift};
-	my @cells = @{shift};
+	my @profiles = @{$_[0]};
+	my @cells = @{$_[1]};
 
-	print @profiles;
-	print @cells;
+	#print @profiles;
+	#print @cells;
 
 	#Since a lower delta is better, we have to subtract from max_weight
 	#to get a correctly weighted set
 	my $max_delta_sum = 0;
 
+	my @deltas;
 	
 	#Generate change value.
 	#Somewhat verbose in order to prevent the array of pointers to hashes with pointers 
@@ -89,7 +89,16 @@ sub sum_delta_weight
 			}
 		}
 		
-		$profile{'weight'} = $delta_sum;
+		print $delta_sum;
+		#$profile{'weight'} = $delta_sum;
+
+		my $entry = ();
+
+		$entry{'x'} = $profiles{'x'};
+		$entry{'y'} = $profiles{'y'};
+		$entry{'weight'} = $delta_sum;
+
+		push(@deltas , $entry);
 
 		if($delta_sum > $max_delta_sum)
 		{
@@ -98,13 +107,13 @@ sub sum_delta_weight
 	}
 
 	#Now we adjust the delta's based off the max_delta_sum 
-	foreach my $profile_ptr (@profiles){
-		my %profile = %{$profile_ptr};
-
+	foreach my $entry (@deltas){
 		#Add one so that the max_delta_sum profile is not excluded from the 
 		#midpoint calculation
-		$profile{'weight'} = $max_delta_sum - $profile{'weight'} + 1;
+		$entry{'weight'} = $max_delta_sum - $entry{'weight'} + 1;
 	}
+
+	return @deltas;
 }
 
 #Defines the weights as the sum of the times the
